@@ -23,8 +23,17 @@ interface Food {
   name: string;
   description: string;
   price: number;
-  formattedValue: number;
+  quantity: number;
+  formattedValue: string;
   thumbnail_url: string;
+  extras: Extra[];
+}
+
+interface Extra {
+  id: number;
+  name: string;
+  value: number;
+  quantity: number;
 }
 
 const Orders: React.FC = () => {
@@ -32,7 +41,26 @@ const Orders: React.FC = () => {
 
   useEffect(() => {
     async function loadOrders(): Promise<void> {
-      // Load orders from API
+      // Load favorite foods from api
+      const { data } = await api.get<Food[]>('orders');
+
+      setOrders(
+        data
+          .map(food => {
+            const totalFood = food.price * food.quantity;
+            const total = food.extras.reduce(
+              (accumulator, { value, quantity }) => {
+                return accumulator + value * quantity;
+              },
+              totalFood,
+            );
+            return {
+              ...food,
+              formattedValue: formatValue(total),
+            };
+          })
+          .sort((a: Food, b: Food) => (a.id < b.id ? 1 : -1)),
+      );
     }
 
     loadOrders();
@@ -59,7 +87,7 @@ const Orders: React.FC = () => {
               <FoodContent>
                 <FoodTitle>{item.name}</FoodTitle>
                 <FoodDescription>{item.description}</FoodDescription>
-                <FoodPricing>{item.formattedPrice}</FoodPricing>
+                <FoodPricing>{item.formattedValue}</FoodPricing>
               </FoodContent>
             </Food>
           )}

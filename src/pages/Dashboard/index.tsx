@@ -55,26 +55,44 @@ const Dashboard: React.FC = () => {
 
   async function handleNavigate(id: number): Promise<void> {
     // Navigate do ProductDetails page
+    navigation.navigate('FoodDetails', {
+      id,
+    });
   }
-
-  useEffect(() => {
-    async function loadFoods(): Promise<void> {
-      // Load Foods from API
-    }
-
-    loadFoods();
-  }, [selectedCategory, searchValue]);
 
   useEffect(() => {
     async function loadCategories(): Promise<void> {
       // Load categories from API
+      const response = await api.get<Category[]>('categories');
+      setCategories(response.data);
     }
 
     loadCategories();
   }, [selectedCategory, searchValue]);
 
+  useEffect(() => {
+    async function loadFoods(): Promise<void> {
+      // Load Foods from API
+      const { data } = await api.get<Food[]>(`foods`, {
+        params: {
+          name_like: searchValue,
+          ...(selectedCategory ? { category_like: selectedCategory } : {}),
+        },
+      });
+      setFoods(
+        data.map(food => ({
+          ...food,
+          formattedPrice: formatValue(food.price),
+        })),
+      );
+    }
+
+    loadFoods();
+  }, [selectedCategory, searchValue]);
+
   function handleSelectCategory(id: number): void {
     // Select / deselect category
+    setSelectedCategory(prevState => (prevState === id ? undefined : id));
   }
 
   return (
